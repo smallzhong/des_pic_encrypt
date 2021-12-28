@@ -88,7 +88,7 @@ void decrypt_image_CBC(uchar* de_buf, bitset<64> iv)
 
 int main()
 {
-	freopen("log.txt", "w", stdout);
+	//freopen("log.txt", "w", stdout);
 
 	// 初始化des密钥
 	init_des("zyc9075 ");

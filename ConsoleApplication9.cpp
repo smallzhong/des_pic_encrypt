@@ -76,6 +76,10 @@ void decrypt_image_CBC(uchar* de_buf, bitset<64> iv)
 		memcpy(&origin, (void*)(de_buf + i * 8), 8);
 		bitset<64> after;
 		after = decrypt_CBC(origin, iv);
+		//char t[123];
+		//memset(t, 0, sizeof(t));
+		//memcpy(t, &iv, sizeof(long long));
+		//printf("%s\n", t);
 
 		memcpy(&iv, &origin, 8); // 更新iv
 		memcpy((void*)(de_buf + (i * 8)), &after, 8);
@@ -84,6 +88,8 @@ void decrypt_image_CBC(uchar* de_buf, bitset<64> iv)
 
 int main()
 {
+	freopen("log.txt", "w", stdout);
+
 	// 初始化des密钥
 	init_des("zyc9075 ");
 

@@ -36,7 +36,7 @@ void encrypt_image(uchar* en_buf)
 		memcpy(&origin, (void*)(en_buf + i * 8), 8);
 
 		bitset<64> after;
-		after = encrypt(origin);
+		after = encrypt_ECB(origin);
 		memcpy((void*)(en_buf + (i * 8)), &after, 8);
 	}
 }
@@ -48,7 +48,7 @@ void decrypt_image(uchar* de_buf)
 		bitset<64> origin;
 		memcpy(&origin, (void *)(de_buf + i * 8), 8);
 		bitset<64> after;
-		after = decrypt(origin);
+		after = decrypt_ECB(origin);
 		memcpy((void *)(de_buf + (i * 8)), &after, 8);
 	}
 }
@@ -59,7 +59,7 @@ int main()
 	init_des("zyc9075 ");
 
 	// 读取图像
-	Mat backImg = imread("g:/lena1.png");
+	Mat backImg = imread("g:/256.png");
 	buf_size = backImg.cols * backImg.rows * backImg.channels();
 
 	// 原始图像buffer

@@ -226,7 +226,7 @@ bitset<64> charToBitset(const char s[8])
 /**
  *  DES¼ÓÃÜ
  */
-bitset<64> encrypt(bitset<64>& plain)
+bitset<64> encrypt_ECB(bitset<64>& plain)
 {
 	bitset<64> cipher;
 	bitset<64> currentBits;
@@ -264,7 +264,7 @@ bitset<64> encrypt(bitset<64>& plain)
 /**
  *  DES½âÃÜ
  */
-bitset<64> decrypt(bitset<64>& cipher)
+bitset<64> decrypt_ECB(bitset<64>& cipher)
 {
 	bitset<64> plain;
 	bitset<64> currentBits;

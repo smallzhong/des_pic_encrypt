@@ -4,7 +4,7 @@
 
 using namespace cv;
 
-
+int buf_size;
 
 void colorReduce(Mat& image)
 {
@@ -28,32 +28,39 @@ void colorReduce(Mat& image)
 	}
 }
 
-void encrypt_image(uchar* ttt)
+void encrypt_image(uchar* en_buf)
 {
-	for (int i = 0; i < 196608 / 8; i++)
+	for (int i = 0; i < buf_size / 8; i++)
 	{
-		/*	bitset<64> t;
-			memcpy(&t, (void *)(ttt[i * 8]), 8);*/
 		bitset<64> origin;
-		memcpy(&origin, (void*)(ttt + i * 8), 8);
+		memcpy(&origin, (void*)(en_buf + i * 8), 8);
 
 		bitset<64> after;
 		after = encrypt(origin);
-		memcpy((void*)(ttt + (i * 8)), &after, 8);
-		//t ^= 123;
+		memcpy((void*)(en_buf + (i * 8)), &after, 8);
+	}
+}
 
-		//memcpy((void *)ttt[i * 8], &t, 8);
+void decrypt_image(uchar* de_buf)
+{
+	for (int i = 0; i < buf_size / 8; i++)
+	{
+		bitset<64> origin;
+		memcpy(&origin, (void *)(de_buf + i * 8), 8);
+		bitset<64> after;
+		after = decrypt(origin);
+		memcpy((void *)(de_buf + (i * 8)), &after, 8);
 	}
 }
 
 int main()
 {
+	// 初始化des密钥
 	init_des("zyc9075 ");
 
-	Mat backImg = imread("g:/lena1.png");  //存放自己图像的路径 
-	//imshow("显示图像", backImg);
-
-	//colorReduce(backImg);
+	// 读取图像
+	Mat backImg = imread("g:/lena1.png");
+	buf_size = backImg.cols * backImg.rows * backImg.channels();
 
 	// 原始图像buffer
 	char(*origin_image_buffer)[8] = (char(*)[8])malloc(backImg.rows * backImg.cols * backImg.channels());
@@ -72,7 +79,9 @@ int main()
 	// 进行图像加密
 	encrypt_image((uchar *)encrypt_image_buffer);
 
-
+	// 进行图像解密
+	memcpy((void *)decrypt_image_buffer, (void *)encrypt_image_buffer, buf_size);
+	decrypt_image((uchar *)decrypt_image_buffer);
 
 	memcpy(backImg.data, origin_image_buffer, backImg.rows * backImg.cols * backImg.channels());
 	imshow("加密前的图片", backImg);

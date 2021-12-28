@@ -30,26 +30,44 @@ void colorReduce(Mat& image)
 
 int main()
 {
+	init_des("zyc9075 ");
+
 	Mat backImg = imread("g:/lena1.png");  //存放自己图像的路径 
-	imshow("显示图像", backImg);
+	//imshow("显示图像", backImg);
 
 	//colorReduce(backImg);
 
-	char(*p)[8] = (char(*)[8])malloc(backImg.rows * backImg.cols * backImg.channels());
+	char(*origin_image_buffer)[8] = (char(*)[8])malloc(backImg.rows * backImg.cols * backImg.channels());
 	if (backImg.isContinuous())
 	{
-		memcpy(p, backImg.data, backImg.rows * backImg.cols * backImg.channels());
+		memcpy(origin_image_buffer, backImg.data, backImg.rows * backImg.cols * backImg.channels());
 	}
 
-	uchar* ttt = (uchar*)p;
-	for (int i = 0; i < 196608; i++)
+	char(*encrypt_image_buffer)[8] = (char(*)[8])malloc(backImg.rows * backImg.cols * backImg.channels());
+	memcpy((void*)encrypt_image_buffer, (void*)origin_image_buffer, backImg.rows * backImg.cols * backImg.channels());
+
+	uchar* ttt = (uchar*)encrypt_image_buffer;
+	for (int i = 0; i < 196608 / 8; i++)
 	{
-		ttt[i] ^= 123;
+		/*	bitset<64> t;
+			memcpy(&t, (void *)(ttt[i * 8]), 8);*/
+		bitset<64> origin;
+		memcpy(&origin, (void*)(ttt + i * 8), 8);
+
+		bitset<64> after;
+		after = encrypt(origin);
+		memcpy((void*)(ttt + (i * 8)), &after, 8);
+		//t ^= 123;
+
+		//memcpy((void *)ttt[i * 8], &t, 8);
 	}
 
-	memcpy(backImg.data, p, backImg.rows * backImg.cols * backImg.channels());
+	memcpy(backImg.data, origin_image_buffer, backImg.rows * backImg.cols * backImg.channels());
+	imshow("加密后的图片", backImg);
 
-	imshow("显示图像_after", backImg);
+	memcpy(backImg.data, encrypt_image_buffer, backImg.rows * backImg.cols * backImg.channels());
+	imshow("加密后的图片", backImg);
+	//imwrite("after_en.png", backImg);
 
 	waitKey(0);
 	return 0;

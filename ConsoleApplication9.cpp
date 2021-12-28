@@ -28,7 +28,7 @@ void colorReduce(Mat& image)
 	}
 }
 
-void encrypt_image(uchar* en_buf)
+void encrypt_image_ECB(uchar* en_buf)
 {
 	for (int i = 0; i < buf_size / 8; i++)
 	{
@@ -41,15 +41,44 @@ void encrypt_image(uchar* en_buf)
 	}
 }
 
-void decrypt_image(uchar* de_buf)
+void decrypt_image_ECB(uchar* de_buf)
 {
 	for (int i = 0; i < buf_size / 8; i++)
 	{
 		bitset<64> origin;
-		memcpy(&origin, (void *)(de_buf + i * 8), 8);
+		memcpy(&origin, (void*)(de_buf + i * 8), 8);
 		bitset<64> after;
 		after = decrypt_ECB(origin);
-		memcpy((void *)(de_buf + (i * 8)), &after, 8);
+		memcpy((void*)(de_buf + (i * 8)), &after, 8);
+	}
+}
+
+void encrypt_image_CBC(uchar* en_buf, bitset<64> iv)
+{
+	for (int i = 0; i < buf_size / 8; i++)
+	{
+		bitset<64> origin;
+		memcpy(&origin, (void*)(en_buf + i * 8), 8);
+
+		bitset<64> after;
+		after = encrypt_CBC(origin, iv);
+
+		memcpy(&iv, &after, 8); // 更新iv
+		memcpy((void*)(en_buf + (i * 8)), &after, 8);
+	}
+}
+
+void decrypt_image_CBC(uchar* de_buf, bitset<64> iv)
+{
+	for (int i = 0; i < buf_size / 8; i++)
+	{
+		bitset<64> origin;
+		memcpy(&origin, (void*)(de_buf + i * 8), 8);
+		bitset<64> after;
+		after = decrypt_CBC(origin, iv);
+
+		memcpy(&iv, &origin, 8); // 更新iv
+		memcpy((void*)(de_buf + (i * 8)), &after, 8);
 	}
 }
 
@@ -77,11 +106,14 @@ int main()
 	char(*decrypt_image_buffer)[8] = (char(*)[8])malloc(backImg.rows * backImg.cols * backImg.channels());
 
 	// 进行图像加密
-	encrypt_image((uchar *)encrypt_image_buffer);
+	//encrypt_image_ECB((uchar*)encrypt_image_buffer);
+	encrypt_image_CBC((uchar *)encrypt_image_buffer, charToBitset("80031190"));
 
 	// 进行图像解密
-	memcpy((void *)decrypt_image_buffer, (void *)encrypt_image_buffer, buf_size);
-	decrypt_image((uchar *)decrypt_image_buffer);
+	memcpy((void*)decrypt_image_buffer, (void*)encrypt_image_buffer, buf_size);
+	//decrypt_image_ECB((uchar*)decrypt_image_buffer);
+	decrypt_image_CBC((uchar *)decrypt_image_buffer, charToBitset("80031190"));
+
 
 	memcpy(backImg.data, origin_image_buffer, backImg.rows * backImg.cols * backImg.channels());
 	imshow("加密前的图片", backImg);

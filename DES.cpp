@@ -300,6 +300,94 @@ bitset<64> decrypt_ECB(bitset<64>& cipher)
 }
 
 
+
+/**
+ *  DES加密，CBC模式
+ */
+bitset<64> encrypt_CBC(bitset<64>& plain, bitset<64> iv)
+{
+	bitset<64> cipher;
+	bitset<64> currentBits;
+	bitset<32> left;
+	bitset<32> right;
+	bitset<32> newLeft;
+
+	// 第零步：plain和iv进行异或
+	plain ^= iv; // CBC模式，开始时和初始化向量进行异或
+
+	// 第一步：初始置换IP
+	for (int i = 0; i < 64; ++i)
+		currentBits[63 - i] = plain[64 - IP[i]];
+	// 第二步：获取 Li 和 Ri
+	for (int i = 32; i < 64; ++i)
+		left[i - 32] = currentBits[i];
+	for (int i = 0; i < 32; ++i)
+		right[i] = currentBits[i];
+	// 第三步：共16轮迭代
+	for (int round = 0; round < 16; ++round)
+	{
+		newLeft = right;
+		right = left ^ f(right, subKey[round]);
+		left = newLeft;
+	}
+	// 第四步：合并L16和R16，注意合并为 R16L16
+	for (int i = 0; i < 32; ++i)
+		cipher[i] = left[i];
+	for (int i = 32; i < 64; ++i)
+		cipher[i] = right[i - 32];
+	// 第五步：结尾置换IP-1
+	currentBits = cipher;
+	for (int i = 0; i < 64; ++i)
+		cipher[63 - i] = currentBits[64 - IP_1[i]];
+
+	// 返回密文
+	return cipher;
+}
+
+/**
+ *  DES解密，CBC模式
+ */
+bitset<64> decrypt_CBC(bitset<64>& cipher, bitset<64> iv)
+{
+	bitset<64> plain;
+	bitset<64> currentBits;
+	bitset<32> left;
+	bitset<32> right;
+	bitset<32> newLeft;
+
+	// 第一步：初始置换IP
+	for (int i = 0; i < 64; ++i)
+		currentBits[63 - i] = cipher[64 - IP[i]];
+	// 第二步：获取 Li 和 Ri
+	for (int i = 32; i < 64; ++i)
+		left[i - 32] = currentBits[i];
+	for (int i = 0; i < 32; ++i)
+		right[i] = currentBits[i];
+	// 第三步：共16轮迭代（子密钥逆序应用）
+	for (int round = 0; round < 16; ++round)
+	{
+		newLeft = right;
+		right = left ^ f(right, subKey[15 - round]);
+		left = newLeft;
+	}
+	// 第四步：合并L16和R16，注意合并为 R16L16
+	for (int i = 0; i < 32; ++i)
+		plain[i] = left[i];
+	for (int i = 32; i < 64; ++i)
+		plain[i] = right[i - 32];
+	// 第五步：结尾置换IP-1
+	currentBits = plain;
+	for (int i = 0; i < 64; ++i)
+		plain[63 - i] = currentBits[64 - IP_1[i]];
+
+	// 第六步：得到的结果和iv进行异或
+	plain ^= iv;
+	// 返回明文
+	return plain;
+}
+
+
+
 void init_des(string k)
 {
 	key = charToBitset(k.c_str());

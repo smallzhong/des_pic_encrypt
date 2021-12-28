@@ -63,7 +63,7 @@ int main()
 	}
 
 	memcpy(backImg.data, origin_image_buffer, backImg.rows * backImg.cols * backImg.channels());
-	imshow("加密后的图片", backImg);
+	imshow("加密前的图片", backImg);
 
 	memcpy(backImg.data, encrypt_image_buffer, backImg.rows * backImg.cols * backImg.channels());
 	imshow("加密后的图片", backImg);

@@ -395,6 +395,12 @@ void init_des(string k)
 	generateKeys();
 }
 
+void init_des_bitset(bitset<64> k)
+{
+	memcpy(&key, &k, 8);
+	generateKeys();
+}
+
 
 /**********************************************************************/
 /* ≤‚ ‘£∫                                                             */

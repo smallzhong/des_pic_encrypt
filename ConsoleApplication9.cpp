@@ -86,6 +86,48 @@ void decrypt_image_CBC(uchar* de_buf, bitset<64> iv)
 	}
 }
 
+void encrypt_image_EDE2_CBC(uchar* en_buf, bitset<64> key1, bitset<64> key2, bitset<64> iv)
+{
+	// 初始化第一个key
+	init_des_bitset(key1);
+
+	// 第一步：key1加密
+	encrypt_image_CBC(en_buf, iv);
+
+	// 初始化第二个key
+	init_des_bitset(key2);
+
+	// 第二步：key2解密
+	decrypt_image_CBC(en_buf, iv);
+
+	// 初始化第一个key
+	init_des_bitset(key1);
+
+	// 第三步：key1加密第二次
+	encrypt_image_CBC(en_buf, iv);
+}
+
+void decrypt_image_EDE2_CBC(uchar* de_buf, bitset<64> key1, bitset<64> key2, bitset<64> iv)
+{
+	// 初始化第一个key
+	init_des_bitset(key1);
+
+	// 第一步：key1解密
+	decrypt_image_CBC(de_buf, iv);
+
+	// 初始化第二个key
+	init_des_bitset(key2);
+
+	// 第二步：key2加密
+	encrypt_image_CBC(de_buf, iv);
+
+	// 初始化第一个key
+	init_des_bitset(key1);
+
+	// 第三步：key1解密第二次
+	decrypt_image_CBC(de_buf, iv);
+}
+
 int main()
 {
 	//freopen("log.txt", "w", stdout);
@@ -113,24 +155,29 @@ int main()
 
 	// 进行图像加密
 	//encrypt_image_ECB((uchar*)encrypt_image_buffer);
-	encrypt_image_CBC((uchar *)encrypt_image_buffer, charToBitset("80031190"));
+	//encrypt_image_CBC((uchar*)encrypt_image_buffer, charToBitset("80031190"));
+	encrypt_image_EDE2_CBC((uchar *)encrypt_image_buffer, charToBitset("12345678"), 
+		charToBitset("87654321"), charToBitset("8003119075"));
 
 	// 进行图像解密
 	memcpy((void*)decrypt_image_buffer, (void*)encrypt_image_buffer, buf_size);
 	//decrypt_image_ECB((uchar*)decrypt_image_buffer);
-	decrypt_image_CBC((uchar *)decrypt_image_buffer, charToBitset("80031190"));
-
+	//decrypt_image_CBC((uchar*)decrypt_image_buffer, charToBitset("80031190"));
+	decrypt_image_EDE2_CBC((uchar *)decrypt_image_buffer, charToBitset("12345678"),
+		charToBitset("87654321"), charToBitset("8003119075"));
 
 	memcpy(backImg.data, origin_image_buffer, backImg.rows * backImg.cols * backImg.channels());
 	imshow("加密前的图片", backImg);
+	imwrite("1.png", backImg);
 
 	memcpy(backImg.data, encrypt_image_buffer, backImg.rows * backImg.cols * backImg.channels());
 	imshow("加密后的图片", backImg);
+	imwrite("2.png", backImg);
 
 	memcpy(backImg.data, decrypt_image_buffer, backImg.rows * backImg.cols * backImg.channels());
 	imshow("重新解密后的图片", backImg);
 
-	//imwrite("after_en.png", backImg);
+	imwrite("3.png", backImg);
 
 	waitKey(0);
 	return 0;

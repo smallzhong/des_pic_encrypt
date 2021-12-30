@@ -14,6 +14,10 @@ extern "C" int opterr;
 extern "C" int optopt;
 
 int buf_size;
+char g_e_or_d;
+int g_encrypt_type;
+char g_input_file[0x1000];
+char g_output_file[0x1000];
 
 void colorReduce(Mat& image)
 {
@@ -137,31 +141,89 @@ void decrypt_image_EDE2_CBC(uchar* de_buf, bitset<64> key1, bitset<64> key2, bit
 	decrypt_image_CBC(de_buf, iv);
 }
 
-void die_and_print()
+void print_and_die()
 {
 	printf("  [ Yuchu Pic Encrypter v0.0.1\n"
 		"  [ github.com/smallzhong\n"
-		"\t-t <type> encrypt type you want to use, 1:ECB 2:CBC 3:EDE2_CBC\n"
+		"\t-t <type> encrypt type you want to use, 1:ECB 2:CBC 3:EDE2_CBC(default)\n"
 		"\t-e Encrypt the input image\n"
 		"\t-d Decrypt the input image\n"
 		"\t-i <filepath> input image path\n"
 		"\t-o <filepath> output image path\n");
+
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char* argv[])
 {
 	if (argc < 2)
 	{
-		die_and_print();
+		print_and_die();
 		return 0;
 	}
 
 	char ch;
-	while ((ch = getopt(argc, argv, "ab:c:de::")) != -1)
+	while ((ch = getopt(argc, argv, "edt:i:o:")) != -1)
 	{
-		printf("%c\n", ch);
-		printf("%s\n", optarg);
+		switch (ch)
+		{
+		case 'e':
+		{
+			if (g_e_or_d != '\0')
+				print_and_die();
+			g_e_or_d = 'e';
+			break;
+		}
+		case 'd':
+		{
+			if (g_e_or_d != '\0')
+				print_and_die();
+			g_e_or_d = 'd';
+			break;
+		}
+		case 'i':
+		{
+			printf("输入文件为：%s\n", optarg);
+			strcpy(g_input_file, optarg);
+			break;
+		}
+		case 'o':
+		{
+			printf("输出文件为：%s", optarg);
+			strcpy(g_output_file, optarg);
+			break;
+		}
+		case 't':
+		{
+			if (g_encrypt_type != 0) 
+				print_and_die();
+			g_encrypt_type = optarg[0] - '0';
+			break;
+		}
+		default:
+			print_and_die();
+			break;
+		}
 	}
+
+	if (g_encrypt_type == 0)
+	{
+		// 默认为3
+		g_encrypt_type = 3;
+	}
+
+	if (*g_input_file == '\0')
+	{
+		printf("请指定输入文件！\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if (*g_output_file == '\0')
+	{
+		printf("请指定输出文件！\n");
+		exit(EXIT_FAILURE);
+	}
+
 	return 0;
 
 

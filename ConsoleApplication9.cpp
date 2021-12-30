@@ -13,11 +13,14 @@ extern "C" int opterr;
 
 extern "C" int optopt;
 
-int buf_size;
+int g_buf_size;
 char g_e_or_d;
 int g_encrypt_type;
 char g_input_file[0x1000];
 char g_output_file[0x1000];
+char g_key1[0x1000];
+char g_key2[0x1000];
+char g_iv[0x1000];
 
 void colorReduce(Mat& image)
 {
@@ -43,7 +46,7 @@ void colorReduce(Mat& image)
 
 void encrypt_image_ECB(uchar* en_buf)
 {
-	for (int i = 0; i < buf_size / 8; i++)
+	for (int i = 0; i < g_buf_size / 8; i++)
 	{
 		bitset<64> origin;
 		memcpy(&origin, (void*)(en_buf + i * 8), 8);
@@ -56,7 +59,7 @@ void encrypt_image_ECB(uchar* en_buf)
 
 void decrypt_image_ECB(uchar* de_buf)
 {
-	for (int i = 0; i < buf_size / 8; i++)
+	for (int i = 0; i < g_buf_size / 8; i++)
 	{
 		bitset<64> origin;
 		memcpy(&origin, (void*)(de_buf + i * 8), 8);
@@ -68,7 +71,7 @@ void decrypt_image_ECB(uchar* de_buf)
 
 void encrypt_image_CBC(uchar* en_buf, bitset<64> iv)
 {
-	for (int i = 0; i < buf_size / 8; i++)
+	for (int i = 0; i < g_buf_size / 8; i++)
 	{
 		bitset<64> origin;
 		memcpy(&origin, (void*)(en_buf + i * 8), 8);
@@ -83,7 +86,7 @@ void encrypt_image_CBC(uchar* en_buf, bitset<64> iv)
 
 void decrypt_image_CBC(uchar* de_buf, bitset<64> iv)
 {
-	for (int i = 0; i < buf_size / 8; i++)
+	for (int i = 0; i < g_buf_size / 8; i++)
 	{
 		bitset<64> origin;
 		memcpy(&origin, (void*)(de_buf + i * 8), 8);
@@ -145,13 +148,48 @@ void print_and_die()
 {
 	printf("  [ Yuchu Pic Encrypter v0.0.1\n"
 		"  [ github.com/smallzhong\n"
+		"\t-a <key> encrypt key1\n"
+		"\t-b <key> encrypt key2\n"
+		"\t-c <key> encrypt iv\n"
 		"\t-t <type> encrypt type you want to use, 1:ECB 2:CBC 3:EDE2_CBC(default)\n"
-		"\t-e Encrypt the input image\n"
+		"\t-e Encrypt the input image(default)\n"
 		"\t-d Decrypt the input image\n"
 		"\t-i <filepath> input image path\n"
 		"\t-o <filepath> output image path\n");
 
 	exit(EXIT_SUCCESS);
+}
+
+void encrypt()
+{
+	switch (g_encrypt_type)
+	{
+		// ECB
+	case 1:
+	{
+		// 初始化密钥
+		init_des(g_key1);
+
+		Mat backImg = imread(g_input_file);
+		if (!backImg.data)
+		{
+			EXIT_ERROR("can't open input file");
+		}
+
+		g_buf_size = backImg.cols * backImg.rows * backImg.channels();
+
+		// 加密图像buffer
+		char(*encrypt_image_buffer)[8] = (char(*)[8])malloc(g_buf_size);
+		memcpy((void*)encrypt_image_buffer, (void*)backImg.data, g_buf_size);
+
+		break;
+	}
+	case 2:
+	case 3:
+	default:
+		EXIT_ERROR("");
+		break;
+	}
 }
 
 int main(int argc, char* argv[])
@@ -163,21 +201,21 @@ int main(int argc, char* argv[])
 	}
 
 	char ch;
-	while ((ch = getopt(argc, argv, "edt:i:o:")) != -1)
+	while ((ch = getopt(argc, argv, "a:b:c:hedt:i:o:")) != -1)
 	{
 		switch (ch)
 		{
 		case 'e':
 		{
-			if (g_e_or_d != '\0')
-				print_and_die();
+			//if (g_e_or_d != '\0')
+			//	print_and_die();
 			g_e_or_d = 'e';
 			break;
 		}
 		case 'd':
 		{
-			if (g_e_or_d != '\0')
-				print_and_die();
+			//if (g_e_or_d != '\0')
+			//	print_and_die();
 			g_e_or_d = 'd';
 			break;
 		}
@@ -195,11 +233,30 @@ int main(int argc, char* argv[])
 		}
 		case 't':
 		{
-			if (g_encrypt_type != 0) 
+			if (g_encrypt_type != 0)
 				print_and_die();
 			g_encrypt_type = optarg[0] - '0';
+
 			break;
 		}
+		case 'a':
+		{
+			strcpy(g_key1, optarg);
+			break;
+		}
+		case 'b':
+		{
+			strcpy(g_key2, optarg);
+			break;
+		}
+		case 'c':
+		{
+			strcpy(g_iv, optarg);
+			break;
+		}
+		case 'h':
+			print_and_die();
+			break;
 		default:
 			print_and_die();
 			break;
@@ -210,6 +267,11 @@ int main(int argc, char* argv[])
 	{
 		// 默认为3
 		g_encrypt_type = 3;
+	}
+
+	if (g_encrypt_type < 0 || g_encrypt_type > 3)
+	{
+		EXIT_ERROR("加密方式输入不正确！\n");
 	}
 
 	if (*g_input_file == '\0')
@@ -224,6 +286,24 @@ int main(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 	}
 
+	// 判断是加密还是解密
+	if (g_e_or_d == '\0')
+	{
+		g_e_or_d = 'e'; // 默认为加密
+	}
+
+	if (g_e_or_d == 'e')
+	{
+		encrypt();
+	}
+	else if (g_e_or_d == 'd')
+	{
+		decrypt();
+	}
+	else
+	{
+		EXIT_ERROR("g_e_or_d not set");
+	}
 
 	clock_t a1 = clock();
 
@@ -238,7 +318,7 @@ int main(int argc, char* argv[])
 		EXIT_ERROR("读取图像失败！");
 	}
 
-	buf_size = backImg.cols * backImg.rows * backImg.channels();
+	g_buf_size = backImg.cols * backImg.rows * backImg.channels();
 
 	// 原始图像buffer
 	char(*origin_image_buffer)[8] = (char(*)[8])malloc(backImg.rows * backImg.cols * backImg.channels());
@@ -261,7 +341,7 @@ int main(int argc, char* argv[])
 		charToBitset("87654321"), charToBitset("8003119075"));
 
 	// 进行图像解密
-	memcpy((void*)decrypt_image_buffer, (void*)encrypt_image_buffer, buf_size);
+	memcpy((void*)decrypt_image_buffer, (void*)encrypt_image_buffer, g_buf_size);
 	//decrypt_image_ECB((uchar*)decrypt_image_buffer);
 	//decrypt_image_CBC((uchar*)decrypt_image_buffer, charToBitset("80031190"));
 	decrypt_image_EDE2_CBC((uchar*)decrypt_image_buffer, charToBitset("12345678"),
@@ -269,7 +349,7 @@ int main(int argc, char* argv[])
 
 	memcpy(backImg.data, origin_image_buffer, backImg.rows * backImg.cols * backImg.channels());
 	imshow("加密前的图片", backImg);
-	imwrite("1.png", backImg);
+	//imwrite("1.png", backImg);
 
 	memcpy(backImg.data, encrypt_image_buffer, backImg.rows * backImg.cols * backImg.channels());
 	imshow("加密后的图片", backImg);

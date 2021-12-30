@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
 		}
 		case 'o':
 		{
-			printf("输出文件为：%s", optarg);
+			printf("输出文件为：%s\n", optarg);
 			strcpy(g_output_file, optarg);
 			break;
 		}
@@ -224,8 +224,6 @@ int main(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	return 0;
-
 
 	clock_t a1 = clock();
 
@@ -233,7 +231,13 @@ int main(int argc, char* argv[])
 	init_des("zyc9075 ");
 
 	// 读取图像
-	Mat backImg = imread("g:/256.png");
+	Mat backImg = imread(g_input_file);
+
+	if (!backImg.data)
+	{
+		EXIT_ERROR("读取图像失败！");
+	}
+
 	buf_size = backImg.cols * backImg.rows * backImg.channels();
 
 	// 原始图像buffer

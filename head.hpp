@@ -16,3 +16,12 @@ void init_des(string k);
 void init_des_bitset(bitset<64> k);
 
 extern "C" int getopt(int argc, char* const* argv, const char* optstring);
+
+#define EXIT_ERROR(x)                                 \
+	do                                                \
+	{                                                 \
+		cout << "error in file " << __FILE__ << " in line " << __LINE__ << endl; \
+		cout << x;                                    \
+		getchar();                                    \
+		exit(EXIT_FAILURE);                           \
+	} while (0)

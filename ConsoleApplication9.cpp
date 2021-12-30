@@ -1,8 +1,17 @@
 ﻿#include <opencv2/opencv.hpp>
 #include <iostream>
 #include "head.hpp"
+//#include "getopt.h"
 
 using namespace cv;
+
+extern "C" char* optarg;
+
+extern "C" int optind;
+
+extern "C" int opterr;
+
+extern "C" int optopt;
 
 int buf_size;
 
@@ -128,9 +137,35 @@ void decrypt_image_EDE2_CBC(uchar* de_buf, bitset<64> key1, bitset<64> key2, bit
 	decrypt_image_CBC(de_buf, iv);
 }
 
-int main()
+void die_and_print()
 {
-	//freopen("log.txt", "w", stdout);
+	printf("  [ Yuchu Pic Encrypter v0.0.1\n"
+		"  [ github.com/smallzhong\n"
+		"\t-t <type> encrypt type you want to use, 1:ECB 2:CBC 3:EDE2_CBC\n"
+		"\t-e Encrypt the input image\n"
+		"\t-d Decrypt the input image\n"
+		"\t-i <filepath> input image path\n"
+		"\t-o <filepath> output image path\n");
+}
+
+int main(int argc, char* argv[])
+{
+	if (argc < 2)
+	{
+		die_and_print();
+		return 0;
+	}
+
+	char ch;
+	while ((ch = getopt(argc, argv, "ab:c:de::")) != -1)
+	{
+		printf("%c\n", ch);
+		printf("%s\n", optarg);
+	}
+	return 0;
+
+
+	clock_t a1 = clock();
 
 	// 初始化des密钥
 	init_des("zyc9075 ");
@@ -156,14 +191,14 @@ int main()
 	// 进行图像加密
 	//encrypt_image_ECB((uchar*)encrypt_image_buffer);
 	//encrypt_image_CBC((uchar*)encrypt_image_buffer, charToBitset("80031190"));
-	encrypt_image_EDE2_CBC((uchar *)encrypt_image_buffer, charToBitset("12345678"), 
+	encrypt_image_EDE2_CBC((uchar*)encrypt_image_buffer, charToBitset("12345678"),
 		charToBitset("87654321"), charToBitset("8003119075"));
 
 	// 进行图像解密
 	memcpy((void*)decrypt_image_buffer, (void*)encrypt_image_buffer, buf_size);
 	//decrypt_image_ECB((uchar*)decrypt_image_buffer);
 	//decrypt_image_CBC((uchar*)decrypt_image_buffer, charToBitset("80031190"));
-	decrypt_image_EDE2_CBC((uchar *)decrypt_image_buffer, charToBitset("12345678"),
+	decrypt_image_EDE2_CBC((uchar*)decrypt_image_buffer, charToBitset("12345678"),
 		charToBitset("87654321"), charToBitset("8003119075"));
 
 	memcpy(backImg.data, origin_image_buffer, backImg.rows * backImg.cols * backImg.channels());
@@ -178,6 +213,11 @@ int main()
 	imshow("重新解密后的图片", backImg);
 
 	imwrite("3.png", backImg);
+
+	clock_t a2 = clock();
+
+	double t = (double)(a2 - a1) / CLOCKS_PER_SEC;
+	cout << t;
 
 	waitKey(0);
 	return 0;

@@ -182,6 +182,16 @@ void encrypt()
 		char(*encrypt_image_buffer)[8] = (char(*)[8])malloc(g_buf_size);
 		memcpy((void*)encrypt_image_buffer, (void*)backImg.data, g_buf_size);
 
+		// 进行图像加密
+		encrypt_image_ECB((uchar*)encrypt_image_buffer);
+
+		// 展示加密后的结果
+		memcpy(backImg.data, encrypt_image_buffer, g_buf_size);
+		imshow("ECB加密后的图片", backImg);
+
+		// 保存加密后的图像
+		imwrite(g_output_file, backImg);
+
 		break;
 	}
 	case 2:
@@ -191,6 +201,49 @@ void encrypt()
 		break;
 	}
 }
+
+void decrypt()
+{
+	switch (g_encrypt_type)
+	{
+	// ECB
+	case 1:
+	{
+		// 初始化密钥
+		init_des(g_key1);
+
+		Mat backImg = imread(g_input_file);
+		if (!backImg.data)
+		{
+			EXIT_ERROR("can't open input file");
+		}
+
+		g_buf_size = backImg.cols * backImg.rows * backImg.channels();
+
+		// 加密图像buffer
+		char(*decrypt_image_buffer)[8] = (char(*)[8])malloc(g_buf_size);
+		memcpy((void*)decrypt_image_buffer, (void*)backImg.data, g_buf_size);
+
+		// 进行图像加密
+		decrypt_image_ECB((uchar*)decrypt_image_buffer);
+
+		// 展示加密后的结果
+		memcpy(backImg.data, decrypt_image_buffer, g_buf_size);
+		imshow("ECB解密后的图片", backImg);
+
+		// 保存加密后的图像
+		imwrite(g_output_file, backImg);
+
+		break;
+	}
+	case 2:
+	case 3:
+	default:
+		EXIT_ERROR("");
+		break;
+	}
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -304,6 +357,8 @@ int main(int argc, char* argv[])
 	{
 		EXIT_ERROR("g_e_or_d not set");
 	}
+
+	return 0;
 
 	clock_t a1 = clock();
 

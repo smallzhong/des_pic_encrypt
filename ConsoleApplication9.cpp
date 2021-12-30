@@ -195,7 +195,37 @@ void encrypt()
 		break;
 	}
 	case 2:
+	{
+		break;
+	}
 	case 3:
+	{
+		Mat backImg = imread(g_input_file);
+		if (!backImg.data)
+		{
+			EXIT_ERROR("can't open input file");
+		}
+
+		g_buf_size = backImg.cols * backImg.rows * backImg.channels();
+
+		// 加密图像buffer
+		char(*encrypt_image_buffer)[8] = (char(*)[8])malloc(g_buf_size);
+		memcpy((void*)encrypt_image_buffer, (void*)backImg.data, g_buf_size);
+
+		// 进行图像加密
+		//encrypt_image_ECB((uchar*)encrypt_image_buffer);
+		encrypt_image_EDE2_CBC((uchar *)encrypt_image_buffer, charToBitset(g_key1), 
+			charToBitset(g_key2), charToBitset(g_iv));
+
+		// 展示加密后的结果
+		memcpy(backImg.data, encrypt_image_buffer, g_buf_size);
+		imshow("CBC_EDE2加密后的图片", backImg);
+
+		// 保存加密后的图像
+		imwrite(g_output_file, backImg);
+
+		break;
+	}
 	default:
 		EXIT_ERROR("");
 		break;
@@ -224,20 +254,47 @@ void decrypt()
 		char(*decrypt_image_buffer)[8] = (char(*)[8])malloc(g_buf_size);
 		memcpy((void*)decrypt_image_buffer, (void*)backImg.data, g_buf_size);
 
-		// 进行图像加密
+		// 进行图像解密
 		decrypt_image_ECB((uchar*)decrypt_image_buffer);
 
-		// 展示加密后的结果
+		// 展示解密后的结果
 		memcpy(backImg.data, decrypt_image_buffer, g_buf_size);
 		imshow("ECB解密后的图片", backImg);
 
-		// 保存加密后的图像
+		// 保存解密后的图像
 		imwrite(g_output_file, backImg);
 
 		break;
 	}
 	case 2:
 	case 3:
+	{
+		Mat backImg = imread(g_input_file);
+		if (!backImg.data)
+		{
+			EXIT_ERROR("can't open input file");
+		}
+
+		g_buf_size = backImg.cols * backImg.rows * backImg.channels();
+
+		// 加密图像buffer
+		char(*decrypt_image_buffer)[8] = (char(*)[8])malloc(g_buf_size);
+		memcpy((void*)decrypt_image_buffer, (void*)backImg.data, g_buf_size);
+
+		// 进行图像解密
+		//encrypt_image_ECB((uchar*)encrypt_image_buffer);
+		decrypt_image_EDE2_CBC((uchar *)decrypt_image_buffer, charToBitset(g_key1), 
+			charToBitset(g_key2), charToBitset(g_iv));
+
+		// 展示解密后的结果
+		memcpy(backImg.data, decrypt_image_buffer, g_buf_size);
+		imshow("CBC_EDE2解密后的图片", backImg);
+
+		// 保存解密后的图像
+		imwrite(g_output_file, backImg);
+
+		break;
+	}
 	default:
 		EXIT_ERROR("");
 		break;
@@ -358,6 +415,7 @@ int main(int argc, char* argv[])
 		EXIT_ERROR("g_e_or_d not set");
 	}
 
+	waitKey(0);
 	return 0;
 
 	clock_t a1 = clock();

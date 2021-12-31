@@ -1,7 +1,7 @@
 #include "head.hpp"
 
-bitset<64> key;                // 64位密钥
-bitset<48> subKey[16];         // 存放16轮子密钥
+bitset<64> g_key;                // 64位密钥
+bitset<48> g_subkey[16];         // 存放16轮子密钥
 
 // 初始置换表
 int IP[] = { 58, 50, 42, 34, 26, 18, 10, 2,
@@ -188,7 +188,7 @@ void generateKeys()
 	bitset<48> compressKey;
 	// 去掉奇偶标记位，将64位密钥变成56位
 	for (int i = 0; i < 56; ++i)
-		realKey[55 - i] = key[64 - PC_1[i]];
+		realKey[55 - i] = g_key[64 - PC_1[i]];
 	// 生成子密钥，保存在 subKeys[16] 中
 	for (int round = 0; round < 16; ++round)
 	{
@@ -207,7 +207,7 @@ void generateKeys()
 			realKey[i] = right[i];
 		for (int i = 0; i < 48; ++i)
 			compressKey[47 - i] = realKey[56 - PC_2[i]];
-		subKey[round] = compressKey;
+		g_subkey[round] = compressKey;
 	}
 }
 
@@ -245,7 +245,7 @@ bitset<64> encrypt_ECB(bitset<64>& plain)
 	for (int round = 0; round < 16; ++round)
 	{
 		newLeft = right;
-		right = left ^ f(right, subKey[round]);
+		right = left ^ f(right, g_subkey[round]);
 		left = newLeft;
 	}
 	// 第四步：合并L16和R16，注意合并为 R16L16
@@ -283,7 +283,7 @@ bitset<64> decrypt_ECB(bitset<64>& cipher)
 	for (int round = 0; round < 16; ++round)
 	{
 		newLeft = right;
-		right = left ^ f(right, subKey[15 - round]);
+		right = left ^ f(right, g_subkey[15 - round]);
 		left = newLeft;
 	}
 	// 第四步：合并L16和R16，注意合并为 R16L16
@@ -327,7 +327,7 @@ bitset<64> encrypt_CBC(bitset<64>& plain, bitset<64> iv)
 	for (int round = 0; round < 16; ++round)
 	{
 		newLeft = right;
-		right = left ^ f(right, subKey[round]);
+		right = left ^ f(right, g_subkey[round]);
 		left = newLeft;
 	}
 	// 第四步：合并L16和R16，注意合并为 R16L16
@@ -367,7 +367,7 @@ bitset<64> decrypt_CBC(bitset<64>& cipher, bitset<64> iv)
 	for (int round = 0; round < 16; ++round)
 	{
 		newLeft = right;
-		right = left ^ f(right, subKey[15 - round]);
+		right = left ^ f(right, g_subkey[15 - round]);
 		left = newLeft;
 	}
 	// 第四步：合并L16和R16，注意合并为 R16L16
@@ -390,13 +390,13 @@ bitset<64> decrypt_CBC(bitset<64>& cipher, bitset<64> iv)
 
 void init_des(string k)
 {
-	key = charToBitset(k.c_str());
+	g_key = charToBitset(k.c_str());
 	// 生成16个子密钥
 	generateKeys();
 }
 
 void init_des_bitset(bitset<64> k)
 {
-	memcpy(&key, &k, 8);
+	memcpy(&g_key, &k, 8);
 	generateKeys();
 }

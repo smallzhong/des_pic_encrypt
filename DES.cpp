@@ -299,8 +299,6 @@ bitset<64> decrypt_ECB(bitset<64> cipher)
 	return plain;
 }
 
-
-
 /**
  *  DES加密，CBC模式
  */
@@ -385,7 +383,6 @@ bitset<64> decrypt_CBC(bitset<64>& cipher, bitset<64> iv)
 	// 返回明文
 	return plain;
 }
-
 
 void init_des(string k)
 {

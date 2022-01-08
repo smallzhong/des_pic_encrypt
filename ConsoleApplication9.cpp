@@ -350,9 +350,6 @@ void encrypt()
 	}
 	case 5:
 	{
-		// 初始化密钥
-		init_des(g_key1);
-
 		Mat backImg = imread(g_input_file);
 		if (!backImg.data)
 		{
@@ -366,6 +363,14 @@ void encrypt()
 		memcpy((void*)encrypt_image_buffer, (void*)backImg.data, g_buf_size);
 
 		// 进行图像加密，EDE2
+		// 初始化密钥1，加密
+		init_des(g_key1);
+		encrypt_image_OFB((uchar*)encrypt_image_buffer, charToBitset(g_iv));
+		// 初始化密钥2，解密
+		init_des(g_key2);
+		decrypt_image_OFB((uchar*)encrypt_image_buffer, charToBitset(g_iv));
+		// 初始化密钥3，加密
+		init_des(g_key1);
 		encrypt_image_OFB((uchar*)encrypt_image_buffer, charToBitset(g_iv));
 
 		// 展示加密后的结果
@@ -510,9 +515,6 @@ void decrypt()
 	}
 	case 5:
 	{
-		// 初始化密钥
-		init_des(g_key1);
-
 		Mat backImg = imread(g_input_file);
 		if (!backImg.data)
 		{
@@ -525,7 +527,15 @@ void decrypt()
 		char(*decrypt_image_buffer)[8] = (char(*)[8])malloc(g_buf_size);
 		memcpy((void*)decrypt_image_buffer, (void*)backImg.data, g_buf_size);
 
-		// 进行图像解密
+		// 进行图像解密，EDE2
+		// 初始化密钥1，解密
+		init_des(g_key1);
+		decrypt_image_OFB((uchar*)decrypt_image_buffer, charToBitset(g_iv));
+		// 初始化密钥2，加密
+		init_des(g_key2);
+		encrypt_image_OFB((uchar*)decrypt_image_buffer, charToBitset(g_iv));
+		// 初始化密钥1，解密
+		init_des(g_key1);
 		decrypt_image_OFB((uchar*)decrypt_image_buffer, charToBitset(g_iv));
 
 		// 展示解密后的结果

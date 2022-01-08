@@ -145,6 +145,47 @@ void decrypt_image_OFB(uchar* de_buf, bitset<64> iv)
 	}
 }
 
+void encrypt_image_CTR(uchar* en_buf, bitset<64> iv)
+{
+	LARGE_INTEGER ctr; // 计数器，前4位为nonce，后4位为次数
+	memcpy(&ctr, &iv, 8);
+	ctr.u.LowPart = 0; // 计数器初始化
+
+	for (int i = 0; i < g_buf_size / 8; i++)
+	{
+		ctr.u.LowPart++; // 计数器+1
+		bitset<64> ctr_bits;
+		memcpy(&ctr_bits, &ctr, 8);
+		encrypt_ECB(ctr_bits); // 加密计数器
+
+		bitset<64> origin; // 明文
+		memcpy(&origin, (void*)(en_buf + i * 8), 8);
+		origin ^= ctr_bits; // 与计数器加密后的值xor
+
+		memcpy((void*)(en_buf + (i * 8)), &origin, 8); // 保存
+	}
+}
+
+void decrypt_image_CTR(uchar* de_buf, bitset<64> iv)
+{
+	LARGE_INTEGER ctr; // 计数器，前4位为nonce，后4位为次数
+	memcpy(&ctr, &iv, 8);
+	ctr.u.LowPart = 0; // 计数器初始化
+	for (int i = 0; i < g_buf_size / 8; i++)
+	{
+		ctr.u.LowPart++; // 计数器+1
+		bitset<64> ctr_bits;
+		memcpy(&ctr_bits, &ctr, 8);
+		encrypt_ECB(ctr_bits); // 加密计数器
+
+		bitset<64> origin; // 密文
+		memcpy(&origin, (void*)(de_buf + i * 8), 8);
+		origin ^= ctr_bits; // 与计数器加密后的值xor
+
+		memcpy((void*)(de_buf + (i * 8)), &origin, 8); // 保存
+	}
+}
+
 void decrypt_image_CBC(uchar* de_buf, bitset<64> iv)
 {
 	for (int i = 0; i < g_buf_size / 8; i++)
@@ -380,6 +421,40 @@ void encrypt()
 
 		break;
 	}
+	case 6:
+	{
+		Mat backImg = imread(g_input_file);
+		if (!backImg.data)
+		{
+			EXIT_ERROR("can't open input file");
+		}
+
+		g_buf_size = backImg.cols * backImg.rows * backImg.channels();
+
+		// 加密图像buffer
+		char(*encrypt_image_buffer)[8] = (char(*)[8])malloc(g_buf_size);
+		memcpy((void*)encrypt_image_buffer, (void*)backImg.data, g_buf_size);
+
+		// 进行图像加密，EDE2
+		// 初始化密钥1，加密
+		init_des(g_key1);
+		encrypt_image_CTR((uchar*)encrypt_image_buffer, charToBitset(g_iv));
+		// 初始化密钥2，解密
+		init_des(g_key2);
+		decrypt_image_CTR((uchar*)encrypt_image_buffer, charToBitset(g_iv));
+		// 初始化密钥3，加密
+		init_des(g_key1);
+		encrypt_image_CTR((uchar*)encrypt_image_buffer, charToBitset(g_iv));
+
+		// 展示加密后的结果
+		memcpy(backImg.data, encrypt_image_buffer, g_buf_size);
+		imshow("CTR加密后的图片", backImg);
+
+		// 保存加密后的图像
+		imwrite(g_output_file, backImg);
+
+		break;
+	}
 	default:
 		EXIT_ERROR("");
 		break;
@@ -539,6 +614,40 @@ void decrypt()
 		// 展示解密后的结果
 		memcpy(backImg.data, decrypt_image_buffer, g_buf_size);
 		imshow("CFB解密后的图片", backImg);
+
+		// 保存解密后的图像
+		imwrite(g_output_file, backImg);
+
+		break;
+	}
+	case 6:
+	{
+		Mat backImg = imread(g_input_file);
+		if (!backImg.data)
+		{
+			EXIT_ERROR("can't open input file");
+		}
+
+		g_buf_size = backImg.cols * backImg.rows * backImg.channels();
+
+		// 加密图像buffer
+		char(*decrypt_image_buffer)[8] = (char(*)[8])malloc(g_buf_size);
+		memcpy((void*)decrypt_image_buffer, (void*)backImg.data, g_buf_size);
+
+		// 进行图像解密，EDE2
+		// 初始化密钥1，解密
+		init_des(g_key1);
+		decrypt_image_CTR((uchar*)decrypt_image_buffer, charToBitset(g_iv));
+		// 初始化密钥2，加密
+		init_des(g_key2);
+		encrypt_image_CTR((uchar*)decrypt_image_buffer, charToBitset(g_iv));
+		// 初始化密钥1，解密
+		init_des(g_key1);
+		decrypt_image_CTR((uchar*)decrypt_image_buffer, charToBitset(g_iv));
+
+		// 展示解密后的结果
+		memcpy(backImg.data, decrypt_image_buffer, g_buf_size);
+		imshow("CTR解密后的图片", backImg);
 
 		// 保存解密后的图像
 		imwrite(g_output_file, backImg);

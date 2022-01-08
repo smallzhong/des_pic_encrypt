@@ -29,7 +29,6 @@ typedef union _LARGE_INTEGER {
         int HighPart;
     } u;
     long long QuadPart;
-    bitset<64> bits;
 } LARGE_INTEGER;
 
 #define EXIT_ERROR(x)                                 \

@@ -156,7 +156,7 @@ void encrypt_image_CTR(uchar* en_buf, bitset<64> iv)
 		ctr.u.LowPart++; // 计数器+1
 		bitset<64> ctr_bits;
 		memcpy(&ctr_bits, &ctr, 8);
-		encrypt_ECB(ctr_bits); // 加密计数器
+		ctr_bits = encrypt_ECB(ctr_bits); // 加密计数器
 
 		bitset<64> origin; // 明文
 		memcpy(&origin, (void*)(en_buf + i * 8), 8);
@@ -176,7 +176,7 @@ void decrypt_image_CTR(uchar* de_buf, bitset<64> iv)
 		ctr.u.LowPart++; // 计数器+1
 		bitset<64> ctr_bits;
 		memcpy(&ctr_bits, &ctr, 8);
-		encrypt_ECB(ctr_bits); // 加密计数器
+		ctr_bits = encrypt_ECB(ctr_bits); // 加密计数器
 
 		bitset<64> origin; // 密文
 		memcpy(&origin, (void*)(de_buf + i * 8), 8);

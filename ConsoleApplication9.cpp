@@ -57,6 +57,8 @@ void encrypt_image_ECB(uchar* en_buf)
 	}
 }
 
+
+
 void decrypt_image_ECB(uchar* de_buf)
 {
 	for (int i = 0; i < g_buf_size / 8; i++)
@@ -83,6 +85,24 @@ void encrypt_image_CBC(uchar* en_buf, bitset<64> iv)
 		memcpy((void*)(en_buf + (i * 8)), &after, 8);
 	}
 }
+
+void encrypt_image_CFB(uchar* en_buf, bitset<64> iv)
+{
+	for (int i = 0; i < g_buf_size / 8; i++)
+	{
+		bitset<64> origin; // 明文分组
+		memcpy(&origin, (void*)(en_buf + i * 8), 8);
+
+		bitset<64> after; // 初始化向量iv进行加密
+		after = encrypt_ECB(iv);
+
+		after ^= origin; // iv加密后与明文分组异或，得到密文分组
+
+		memcpy(&iv, &after, 8); // 更新iv
+		memcpy((void*)(en_buf + (i * 8)), &after, 8);
+	}
+}
+
 
 void decrypt_image_CBC(uchar* de_buf, bitset<64> iv)
 {
@@ -245,6 +265,35 @@ void encrypt()
 		// 展示加密后的结果
 		memcpy(backImg.data, encrypt_image_buffer, g_buf_size);
 		imshow("CBC_EDE2加密后的图片", backImg);
+
+		// 保存加密后的图像
+		imwrite(g_output_file, backImg);
+
+		break;
+	}
+	case 4:
+	{
+		// 初始化密钥
+		init_des(g_key1);
+
+		Mat backImg = imread(g_input_file);
+		if (!backImg.data)
+		{
+			EXIT_ERROR("can't open input file");
+		}
+
+		g_buf_size = backImg.cols * backImg.rows * backImg.channels();
+
+		// 加密图像buffer
+		char(*encrypt_image_buffer)[8] = (char(*)[8])malloc(g_buf_size);
+		memcpy((void*)encrypt_image_buffer, (void*)backImg.data, g_buf_size);
+
+		// 进行图像加密
+		encrypt_image_CFB((uchar *)encrypt_image_buffer, charToBitset(g_iv));
+
+		// 展示加密后的结果
+		memcpy(backImg.data, encrypt_image_buffer, g_buf_size);
+		imshow("CFB加密后的图片", backImg);
 
 		// 保存加密后的图像
 		imwrite(g_output_file, backImg);
@@ -432,11 +481,6 @@ int main(int argc, char* argv[])
 		g_encrypt_type = 3;
 	}
 
-	if (g_encrypt_type < 0 || g_encrypt_type > 3)
-	{
-		EXIT_ERROR("加密方式输入不正确！\n");
-	}
-
 	if (*g_input_file == '\0')
 	{
 		printf("请指定输入文件！\n");
@@ -467,69 +511,6 @@ int main(int argc, char* argv[])
 	{
 		EXIT_ERROR("g_e_or_d not set");
 	}
-
-	waitKey(0);
-	return 0;
-
-	clock_t a1 = clock();
-
-	// 初始化des密钥
-	init_des("zyc9075 ");
-
-	// 读取图像
-	Mat backImg = imread(g_input_file);
-
-	if (!backImg.data)
-	{
-		EXIT_ERROR("读取图像失败！");
-	}
-
-	g_buf_size = backImg.cols * backImg.rows * backImg.channels();
-
-	// 原始图像buffer
-	char(*origin_image_buffer)[8] = (char(*)[8])malloc(backImg.rows * backImg.cols * backImg.channels());
-	if (backImg.isContinuous())
-	{
-		memcpy(origin_image_buffer, backImg.data, backImg.rows * backImg.cols * backImg.channels());
-	}
-
-	// 加密图像buffer
-	char(*encrypt_image_buffer)[8] = (char(*)[8])malloc(backImg.rows * backImg.cols * backImg.channels());
-	memcpy((void*)encrypt_image_buffer, (void*)origin_image_buffer, backImg.rows * backImg.cols * backImg.channels());
-
-	// 解密后的图像的buffer
-	char(*decrypt_image_buffer)[8] = (char(*)[8])malloc(backImg.rows * backImg.cols * backImg.channels());
-
-	// 进行图像加密
-	//encrypt_image_ECB((uchar*)encrypt_image_buffer);
-	//encrypt_image_CBC((uchar*)encrypt_image_buffer, charToBitset("80031190"));
-	encrypt_image_EDE2_CBC((uchar*)encrypt_image_buffer, charToBitset("12345678"),
-		charToBitset("87654321"), charToBitset("8003119075"));
-
-	// 进行图像解密
-	memcpy((void*)decrypt_image_buffer, (void*)encrypt_image_buffer, g_buf_size);
-	//decrypt_image_ECB((uchar*)decrypt_image_buffer);
-	//decrypt_image_CBC((uchar*)decrypt_image_buffer, charToBitset("80031190"));
-	decrypt_image_EDE2_CBC((uchar*)decrypt_image_buffer, charToBitset("12345678"),
-		charToBitset("87654321"), charToBitset("8003119075"));
-
-	memcpy(backImg.data, origin_image_buffer, backImg.rows * backImg.cols * backImg.channels());
-	imshow("加密前的图片", backImg);
-	//imwrite("1.png", backImg);
-
-	memcpy(backImg.data, encrypt_image_buffer, backImg.rows * backImg.cols * backImg.channels());
-	imshow("加密后的图片", backImg);
-	imwrite("2.png", backImg);
-
-	memcpy(backImg.data, decrypt_image_buffer, backImg.rows * backImg.cols * backImg.channels());
-	imshow("重新解密后的图片", backImg);
-
-	imwrite("3.png", backImg);
-
-	clock_t a2 = clock();
-
-	double t = (double)(a2 - a1) / CLOCKS_PER_SEC;
-	cout << t;
 
 	waitKey(0);
 	return 0;

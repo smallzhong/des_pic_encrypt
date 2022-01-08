@@ -226,7 +226,7 @@ bitset<64> charToBitset(const char s[8])
 /**
  *  DES加密，电码本模式
  */
-bitset<64> encrypt_ECB(bitset<64>& plain)
+bitset<64> encrypt_ECB(bitset<64> plain)
 {
 	bitset<64> cipher;
 	bitset<64> currentBits;
@@ -264,7 +264,7 @@ bitset<64> encrypt_ECB(bitset<64>& plain)
 /**
  *  DES解密，ECB模式
  */
-bitset<64> decrypt_ECB(bitset<64>& cipher)
+bitset<64> decrypt_ECB(bitset<64> cipher)
 {
 	bitset<64> plain;
 	bitset<64> currentBits;
@@ -385,7 +385,6 @@ bitset<64> decrypt_CBC(bitset<64>& cipher, bitset<64> iv)
 	// 返回明文
 	return plain;
 }
-
 
 
 void init_des(string k)

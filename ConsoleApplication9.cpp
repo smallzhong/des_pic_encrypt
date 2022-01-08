@@ -57,8 +57,6 @@ void encrypt_image_ECB(uchar* en_buf)
 	}
 }
 
-
-
 void decrypt_image_ECB(uchar* de_buf)
 {
 	for (int i = 0; i < g_buf_size / 8; i++)

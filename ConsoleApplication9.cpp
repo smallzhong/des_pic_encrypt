@@ -253,7 +253,7 @@ void print_and_die()
 		"\t-a <key> encrypt key1\n"
 		"\t-b <key> encrypt key2\n"
 		"\t-c <key> encrypt iv\n"
-		"\t-t <type> encrypt type you want to use, 1:ECB 2:CBC 3:CBC_EDE2(default) 4:CFB_EDE2 5:OFB_EDE2\n"
+		"\t-t <type> encrypt type you want to use, 1:ECB 2:CBC 3:CBC_EDE2(default) 4:CFB_EDE2 5:OFB_EDE2 6:CTR_EDE2\n"
 		"\t-e Encrypt the input image(default)\n"
 		"\t-d Decrypt the input image\n"
 		"\t-i <filepath> input image path\n"

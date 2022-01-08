@@ -145,8 +145,6 @@ void decrypt_image_OFB(uchar* de_buf, bitset<64> iv)
 	}
 }
 
-
-
 void decrypt_image_CBC(uchar* de_buf, bitset<64> iv)
 {
 	for (int i = 0; i < g_buf_size / 8; i++)

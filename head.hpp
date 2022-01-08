@@ -19,6 +19,19 @@ void init_des_bitset(bitset<64> k);
 
 extern "C" int getopt(int argc, char* const* argv, const char* optstring);
 
+typedef union _LARGE_INTEGER {
+    struct {
+        unsigned int LowPart;
+        int HighPart;
+    } DUMMYSTRUCTNAME;
+    struct {
+        unsigned int LowPart;
+        int HighPart;
+    } u;
+    long long QuadPart;
+    bitset<64> bits;
+} LARGE_INTEGER;
+
 #define EXIT_ERROR(x)                                 \
 	do                                                \
 	{                                                 \

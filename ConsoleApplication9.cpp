@@ -249,7 +249,7 @@ void decrypt_image_EDE2_CBC(uchar* de_buf, bitset<64> key1, bitset<64> key2, bit
 void print_and_die()
 {
 	printf("  [ Yuchu Pic Encrypter v0.0.1\n"
-		"  [ github.com/smallzhong\n"
+		"  [ https://github.com/smallzhong/des_pic_encrypt\n"
 		"\t-a <key> encrypt key1\n"
 		"\t-b <key> encrypt key2\n"
 		"\t-c <key> encrypt iv\n"

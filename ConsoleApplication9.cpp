@@ -113,10 +113,39 @@ void decrypt_image_CFB(uchar* de_buf, bitset<64> iv)
 		plain = iv ^ origin; // iv加密后的数据和密文分组xor得到明文
 
 		memcpy((void*)(de_buf + (i * 8)), &plain, 8);
-		
+
 		memcpy(&iv, &origin, 8); // 更新iv为当前的密文分组
 	}
 }
+
+void encrypt_image_OFB(uchar* en_buf, bitset<64> iv)
+{
+	for (int i = 0; i < g_buf_size / 8; i++)
+	{
+		iv = encrypt_ECB(iv); // 加密初始化向量
+		bitset<64> origin; // 明文
+		memcpy(&origin, (void*)(en_buf + i * 8), 8);
+		bitset<64> after; // 密文
+		after = origin ^ iv; // 密文等于明文^iv
+
+		memcpy((void*)(en_buf + (i * 8)), &after, 8); // 保存
+	}
+}
+
+void decrypt_image_OFB(uchar* de_buf, bitset<64> iv)
+{
+	for (int i = 0; i < g_buf_size / 8; i++)
+	{
+		iv = encrypt_ECB(iv); // 加密iv
+		bitset<64> origin; // 密文
+		memcpy(&origin, (void*)(de_buf + i * 8), 8);
+		bitset<64> after; // 明文
+		after = origin ^ iv; // 密文^iv=明文
+		memcpy((void*)(de_buf + (i * 8)), &after, 8);
+	}
+}
+
+
 
 void decrypt_image_CBC(uchar* de_buf, bitset<64> iv)
 {
@@ -246,7 +275,7 @@ void encrypt()
 		memcpy((void*)encrypt_image_buffer, (void*)backImg.data, g_buf_size);
 
 		// 进行图像加密
-		encrypt_image_CBC((uchar *)encrypt_image_buffer, charToBitset(g_iv));
+		encrypt_image_CBC((uchar*)encrypt_image_buffer, charToBitset(g_iv));
 
 		// 展示加密后的结果
 		memcpy(backImg.data, encrypt_image_buffer, g_buf_size);
@@ -287,6 +316,40 @@ void encrypt()
 	}
 	case 4:
 	{
+		Mat backImg = imread(g_input_file);
+		if (!backImg.data)
+		{
+			EXIT_ERROR("can't open input file");
+		}
+
+		g_buf_size = backImg.cols * backImg.rows * backImg.channels();
+
+		// 加密图像buffer
+		char(*encrypt_image_buffer)[8] = (char(*)[8])malloc(g_buf_size);
+		memcpy((void*)encrypt_image_buffer, (void*)backImg.data, g_buf_size);
+
+		// 进行图像加密，使用EDE2
+		// 初始化密钥1，加密
+		init_des(g_key1);
+		encrypt_image_CFB((uchar*)encrypt_image_buffer, charToBitset(g_iv));
+		// 初始化密钥2，解密
+		init_des(g_key2);
+		decrypt_image_CFB((uchar*)encrypt_image_buffer, charToBitset(g_iv));
+		// 初始化密钥1，加密
+		init_des(g_key1);
+		encrypt_image_CFB((uchar*)encrypt_image_buffer, charToBitset(g_iv));
+
+		// 展示加密后的结果
+		memcpy(backImg.data, encrypt_image_buffer, g_buf_size);
+		imshow("CFB加密后的图片", backImg);
+
+		// 保存加密后的图像
+		imwrite(g_output_file, backImg);
+
+		break;
+	}
+	case 5:
+	{
 		// 初始化密钥
 		init_des(g_key1);
 
@@ -302,12 +365,12 @@ void encrypt()
 		char(*encrypt_image_buffer)[8] = (char(*)[8])malloc(g_buf_size);
 		memcpy((void*)encrypt_image_buffer, (void*)backImg.data, g_buf_size);
 
-		// 进行图像加密
-		encrypt_image_CFB((uchar *)encrypt_image_buffer, charToBitset(g_iv));
+		// 进行图像加密，EDE2
+		encrypt_image_OFB((uchar*)encrypt_image_buffer, charToBitset(g_iv));
 
 		// 展示加密后的结果
 		memcpy(backImg.data, encrypt_image_buffer, g_buf_size);
-		imshow("CFB加密后的图片", backImg);
+		imshow("OFB加密后的图片", backImg);
 
 		// 保存加密后的图像
 		imwrite(g_output_file, backImg);
@@ -413,6 +476,40 @@ void decrypt()
 	}
 	case 4:
 	{
+		Mat backImg = imread(g_input_file);
+		if (!backImg.data)
+		{
+			EXIT_ERROR("can't open input file");
+		}
+
+		g_buf_size = backImg.cols * backImg.rows * backImg.channels();
+
+		// 加密图像buffer
+		char(*decrypt_image_buffer)[8] = (char(*)[8])malloc(g_buf_size);
+		memcpy((void*)decrypt_image_buffer, (void*)backImg.data, g_buf_size);
+
+		// 进行图像解密，使用EDE2
+		// 初始化密钥1，解密
+		init_des(g_key1);
+		decrypt_image_CFB((uchar*)decrypt_image_buffer, charToBitset(g_iv));
+		// 初始化密钥2，加密
+		init_des(g_key2);
+		encrypt_image_CFB((uchar*)decrypt_image_buffer, charToBitset(g_iv));
+		// 初始化密钥1，解密
+		init_des(g_key1);
+		decrypt_image_CFB((uchar*)decrypt_image_buffer, charToBitset(g_iv));
+
+		// 展示解密后的结果
+		memcpy(backImg.data, decrypt_image_buffer, g_buf_size);
+		imshow("CFB解密后的图片", backImg);
+
+		// 保存解密后的图像
+		imwrite(g_output_file, backImg);
+
+		break;
+	}
+	case 5:
+	{
 		// 初始化密钥
 		init_des(g_key1);
 
@@ -429,7 +526,7 @@ void decrypt()
 		memcpy((void*)decrypt_image_buffer, (void*)backImg.data, g_buf_size);
 
 		// 进行图像解密
-		decrypt_image_CFB((uchar*)decrypt_image_buffer, charToBitset(g_iv));
+		decrypt_image_OFB((uchar*)decrypt_image_buffer, charToBitset(g_iv));
 
 		// 展示解密后的结果
 		memcpy(backImg.data, decrypt_image_buffer, g_buf_size);

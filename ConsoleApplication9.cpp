@@ -655,7 +655,7 @@ void decrypt()
 		break;
 	}
 	default:
-		EXIT_ERROR("");
+		EXIT_ERROR("密文选择错误");
 		break;
 	}
 }
